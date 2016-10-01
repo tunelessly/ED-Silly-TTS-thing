@@ -54,7 +54,7 @@ class Countmoney(object):
                 self.say('You have accumulated one million in bounties.')
                 self.bounty = self.bounty - 1000000
 
-            print(self.bounty)
+            
 
         except KeyError:
             pass
