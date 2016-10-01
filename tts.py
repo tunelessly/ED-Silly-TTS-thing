@@ -28,17 +28,20 @@ class Countmoney(object):
         fh         = open(fp, mode='r')
         print("Opened file: " + fp)
 
-        while True:
-            time.sleep(2)
-            lines    = fh.readlines()
+        try:
+            while True:
+                time.sleep(2)
+                lines    = fh.readlines()
 
-            for line in lines:
-                parsedJSON  = json.loads(line)
-                timestamp   = iso8601.parse_date(parsedJSON['timestamp'])
-                
-                if timestamp > self.lastEvent:
-                    self.lastEvent = timestamp
-                    self.parseEvents(parsedJSON)
+                for line in lines:
+                    parsedJSON  = json.loads(line)
+                    timestamp   = iso8601.parse_date(parsedJSON['timestamp'])
+                    
+                    if timestamp > self.lastEvent:
+                        self.lastEvent = timestamp
+                        self.parseEvents(parsedJSON)
+        except KeyboardInterrupt:
+            return
         
         pass
 
