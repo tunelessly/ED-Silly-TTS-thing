@@ -14,7 +14,7 @@ class Countmoney(object):
 
     def __init__(self, _path):
         self.speaker    = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path       = "D:/Libraries/Saved Games/Frontier Developments/Elite Dangerous/" if not _path else _path 
+        self.path       = "C:/Users/" + os.getlogin() + "/Saved Games/Frontier Developments/Elite Dangerous/" if not _path else _path
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
         pass
@@ -27,7 +27,7 @@ class Countmoney(object):
         fp = None 
         fh = None
         try:
-            fp         = max(glob.iglob(self.path + "/*.log"), key=os.path.getctime)
+            fp         = max(glob.iglob(self.path + "\\*.log"), key=os.path.getctime)
             fh         = open(fp, mode='r')
         except FileNotFoundError:
             print ("Path not found.")
@@ -62,7 +62,6 @@ class Countmoney(object):
 
 
     def parseEvents(self, string):
-
         try:
             if(string['event'] == 'Bounty'):
                 self.bounty     += string['Reward'] 
@@ -70,9 +69,6 @@ class Countmoney(object):
             if self.bounty - 1000000 >= 0:
                 self.say('You have accumulated one million in bounties.')
                 self.bounty = self.bounty - 1000000
-
-            
-
         except KeyError:
             pass
         
