@@ -12,9 +12,9 @@ from threading import Thread
 
 class Countmoney(object):
 
-    def __init__(self):
+    def __init__(self, _path):
         self.speaker    = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path       = "D:/Libraries/Saved Games/Frontier Developments/Elite Dangerous/"
+        self.path       = "D:/Libraries/Saved Games/Frontier Developments/Elite Dangerous/" if not _path else _path 
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
         pass
@@ -24,8 +24,18 @@ class Countmoney(object):
         return
 
     def watchFile(self):
-        fp         = max(glob.iglob(self.path + "/*.log"), key=os.path.getctime)
-        fh         = open(fp, mode='r')
+        fp = None 
+        fh = None
+        try:
+            fp         = max(glob.iglob(self.path + "/*.log"), key=os.path.getctime)
+            fh         = open(fp, mode='r')
+        except FileNotFoundError:
+            print ("Path not found.")
+            return
+        except ValueError:
+            print("No log files found.")
+            return
+        
         print("Opened file: " + fp)
 
         try:
@@ -41,6 +51,10 @@ class Countmoney(object):
                         self.lastEvent = timestamp
                         self.parseEvents(parsedJSON)
         except KeyboardInterrupt:
+            print("Quitting")
+            return
+        except json.decoder.JSONDecodeError:
+            print("Invalid JSON. Maybe it's not a valid Elite:Dangerous Journal file?'")
             return
         
         pass
@@ -64,11 +78,14 @@ class Countmoney(object):
         
         return
         
-def main():
-    thing = Countmoney()
+def main(argv):
+    try:
+        thing = Countmoney(argv[1])
+    except IndexError:
+        thing = Countmoney(None)
+    
     thing.watchFile()
-
     return 0
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
