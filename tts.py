@@ -7,6 +7,7 @@ import json
 import datetime
 import pytz
 import iso8601
+import getfolder
 from threading import Thread
 
 
@@ -14,7 +15,7 @@ class Countmoney(object):
 
     def __init__(self, _path):
         self.speaker    = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path       = "C:/Users/" + os.getlogin() + "/Saved Games/Frontier Developments/Elite Dangerous/" if not _path else _path
+        self.path       = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "/Frontier Developments/Elite Dangerous/" if not _path else _path
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
         pass
