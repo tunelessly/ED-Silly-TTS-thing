@@ -15,7 +15,7 @@ class Countmoney(object):
 
     def __init__(self, _path):
         self.speaker    = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path       = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "/Frontier Developments/Elite Dangerous/" if not _path else _path
+        self.path       = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
         pass
@@ -51,6 +51,7 @@ class Countmoney(object):
                     if timestamp > self.lastEvent:
                         self.lastEvent = timestamp
                         self.parseEvents(parsedJSON)
+        
         except KeyboardInterrupt:
             print("Quitting")
             return
@@ -58,20 +59,21 @@ class Countmoney(object):
             print("Invalid JSON. Maybe it's not a valid Elite:Dangerous Journal file?'")
             return
         
-        pass
+        return
 
 
 
     def parseEvents(self, string):
         try:
             if(string['event'] == 'Bounty'):
-                self.bounty     += string['Reward'] 
+                self.bounty     += string['Rewards'][0]['Reward']
 
             if self.bounty - 1000000 >= 0:
                 self.say('You have accumulated one million in bounties.')
                 self.bounty = self.bounty - 1000000
+        
         except KeyError:
-            pass
+            return
         
         return
         
