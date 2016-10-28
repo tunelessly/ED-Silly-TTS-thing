@@ -18,6 +18,7 @@ class Countmoney(object):
         self.path       = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
+        self.czbounty   = 0
         pass
 
     def say(self, stringing):
@@ -65,18 +66,40 @@ class Countmoney(object):
 
     def parseEvents(self, string):
         try:
-            if(string['event'] == 'Bounty'):
-                self.bounty     += string['Rewards'][0]['Reward']
 
-            if self.bounty - 1000000 >= 0:
-                self.say('You have accumulated one million in bounties.')
-                self.bounty = self.bounty - 1000000
+            #Normal Bounties
+            if(string['event'] == 'Bounty'):
+                self.bounties(string)
+
+            #CZ Combat bonds
+            if(string['event'] == 'Bounty'):
+                self.czbounty(string)
         
         except KeyError:
             return
         
         return
-        
+
+    def bounties(self, string):
+        self.bounty     += string['Rewards'][0]['Reward']
+
+        if self.bounty - 1000000 >= 0:
+            self.say('You have accumulated one million in bounties.')
+            self.bounty = self.bounty - 1000000
+
+        return
+
+
+    def combatBonds(self, string):
+        self.czbounty     += string['Reward']
+
+        if self.czbounty - 1000000 >= 0:
+            self.say('You have accumulated one million in combat bonds.')
+            self.czbounty = self.czbounty - 1000000
+
+        return
+
+
 def main(argv):
     try:
         thing = Countmoney(argv[1])
