@@ -19,6 +19,7 @@ class Countmoney(object):
         self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
         self.bounty     = 0
         self.czbounty   = 0
+        self.counter    = 0
         pass
 
     def say(self, stringing):
@@ -49,7 +50,7 @@ class Countmoney(object):
                     parsedJSON  = json.loads(line)
                     timestamp   = iso8601.parse_date(parsedJSON['timestamp'])
                     
-                    if timestamp > self.lastEvent:
+                    if timestamp >= self.lastEvent:
                         self.lastEvent = timestamp
                         self.parseEvents(parsedJSON)
         
@@ -66,19 +67,25 @@ class Countmoney(object):
 
     def parseEvents(self, string):
         try:
-
             #Normal Bounties
             if(string['event'] == 'Bounty'):
                 self.bounties(string)
 
             #CZ Combat bonds
-            if(string['event'] == 'Bounty'):
-                self.czbounty(string)
+            if(string['event'] == 'FactionKillBond'):
+                self.combatBonds(string)
+
+            #Jumping
+            if(string['event'] == 'FSDJump'):
+                self.Jump(string)
         
         except KeyError:
             return
         
         return
+
+    def Jump(self, string):
+        self.say('Arrived at ' + string['StarSystem'])
 
     def bounties(self, string):
         self.bounty     += string['Rewards'][0]['Reward']
