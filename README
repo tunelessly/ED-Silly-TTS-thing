@@ -1,4 +1,4 @@
-A simple Elite Dangerous journal file polling application that reads events of interest (every million in bounties only, for now) back to you using the windows TTS engine.
+A simple Elite Dangerous journal file polling application that reads events of interest - every million in bounties and bonds, and the system you've arrived at -  back to you using the windows TTS engine.
 
 Accepts a path via standard input, otherwise falls back to the default one (%HOMEPATH%\Saved Games\Frontier Developments\Elite Dangerous\). Reads only from the latest log file.
 
