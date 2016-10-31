@@ -72,11 +72,11 @@ class Countmoney(object):
                 self.bounties(string)
 
             #CZ Combat bonds
-            if(string['event'] == 'FactionKillBond'):
+            elif(string['event'] == 'FactionKillBond'):
                 self.combatBonds(string)
 
             #Jumping
-            if(string['event'] == 'FSDJump'):
+            elif(string['event'] == 'FSDJump'):
                 self.Jump(string)
         
         except KeyError:
