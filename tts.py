@@ -9,6 +9,7 @@ import pytz
 import iso8601
 import getfolder
 from threading import Thread
+from pygame import mixer
 
 
 class Countmoney(object):
@@ -20,6 +21,9 @@ class Countmoney(object):
         self.bounty     = 0
         self.czbounty   = 0
         self.counter    = 0
+        mixer.init()
+        mixer.music.load('cena.mp3')
+
         pass
 
     def say(self, stringing):
@@ -43,16 +47,20 @@ class Countmoney(object):
 
         try:
             while True:
-                time.sleep(2)
-                lines    = fh.readlines()
+                #time.sleep(2)
+                #lines    = fh.readlines()
 
-                for line in lines:
-                    parsedJSON  = json.loads(line)
-                    timestamp   = iso8601.parse_date(parsedJSON['timestamp'])
-                    
-                    if timestamp >= self.lastEvent:
-                        self.lastEvent = timestamp
-                        self.parseEvents(parsedJSON)
+                line = fh.readline()
+                if not line:
+                    time.sleep(1)
+                    continue
+
+                parsedJSON      = json.loads(line)
+                timestamp       = iso8601.parse_date(parsedJSON['timestamp'])
+
+                if timestamp >= self.lastEvent:
+                    self.lastEvent      = timestamp
+                    self.parseEvents(parsedJSON)
         
         except KeyboardInterrupt:
             print("Quitting")
@@ -89,8 +97,11 @@ class Countmoney(object):
 
     def bounties(self, string):
         self.bounty     += string['Rewards'][0]['Reward']
+        if(not mixer.music.get_busy()):
+            #mixer.music.play()
+            pass
 
-        if self.bounty - 1000000 >= 0:
+        if self.bounty % 1000000 >= 1:
             self.say('You have accumulated one million in bounties.')
             self.bounty = self.bounty - 1000000
 
@@ -99,6 +110,9 @@ class Countmoney(object):
 
     def combatBonds(self, string):
         self.czbounty     += string['Reward']
+        if(not mixer.music.get_busy()):
+            #mixer.music.play()
+            pass
 
         if self.czbounty - 1000000 >= 0:
             self.say('You have accumulated one million in combat bonds.')
