@@ -35,7 +35,6 @@ class Countmoney(object):
         string = re.sub('(-)', ' dash ', string) #don't do it this way ever
         string = re.sub('([A-Z][A-Z]+)', '<spell>' + r'\1' + '</spell>', string) #ugh
 
-        print (string)
         self.speaker.Speak(string, self.SVSFIsXML)
         return
 
