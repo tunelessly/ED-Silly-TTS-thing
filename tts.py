@@ -10,6 +10,7 @@ import iso8601
 import getfolder
 from threading import Thread
 from pygame import mixer
+import re
 
 
 class Countmoney(object):
@@ -21,13 +22,21 @@ class Countmoney(object):
         self.bounty     = 0
         self.czbounty   = 0
         self.counter    = 0
+        self.SVSFIsXML  = 8 #This flag is the SpeechVoiceSpeakFlag that controls whether the text is read as is or is interpreted as XML. 
+                            #https://msdn.microsoft.com/en-us/library/ms720892(v=vs.85).aspx further reading
         mixer.init()
         mixer.music.load('cena.mp3')
 
         pass
 
     def say(self, stringing):
-        self.speaker.Speak(stringing)
+        string          = ""
+        string = re.sub('(\d+)', '<spell>' + r'\1' + '</spell>', stringing)              
+        string = re.sub('(-)', ' dash ', string) #don't do it this way ever
+        string = re.sub('([A-Z][A-Z]+)', '<spell>' + r'\1' + '</spell>', string) #ugh
+
+        print (string)
+        self.speaker.Speak(string, self.SVSFIsXML)
         return
 
     def watchFile(self):
