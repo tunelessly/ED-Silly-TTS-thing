@@ -35,7 +35,11 @@ class JournalTTS(tk.Frame):
         self.thread             = None
         self.threadShouldStop   = False
         mixer.init()
-        mixer.music.load('cena.mp3')
+        
+        try:
+            mixer.music.load('cena.mp3')
+        except:
+            pass
 
         self.master.title("Silly ED TTS Thing")
         self.createWidgets()
