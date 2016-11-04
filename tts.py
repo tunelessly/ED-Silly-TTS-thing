@@ -16,26 +16,33 @@ import re
 class Countmoney(object):
 
     def __init__(self, _path):
-        self.speaker    = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path       = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
-        self.lastEvent  = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
-        self.bounty     = 0
-        self.czbounty   = 0
-        self.counter    = 0
-        self.SVSFIsXML  = 8 #This flag is the SpeechVoiceSpeakFlag that controls whether the text is read as is or is interpreted as XML. 
-                            #https://msdn.microsoft.com/en-us/library/ms720892(v=vs.85).aspx further reading
+        self.speaker        = win32com.client.Dispatch("SAPI.SpVoice")
+        self.path           = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
+        self.lastEvent      = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
+        self.bounty         = 0
+        self.bountyCount    = 1       
+        self.czbounty       = 0
+        self.czCount        = 1
+        self.speakEvery     = 1000000 #Speak about money every this many credits
+        self.SVSFIsXML      = 8 #This flag is the SpeechVoiceSpeakFlag that controls whether the text is read as is or is interpreted as XML. 
+                                #https://msdn.microsoft.com/en-us/library/ms720892(v=vs.85).aspx further reading
         mixer.init()
         mixer.music.load('cena.mp3')
 
         pass
 
-    def say(self, stringing):
+    def say(self, stringing, isLiteral=False):
         string          = ""
-        string = re.sub('(\d+)', '<spell>' + r'\1' + '</spell>', stringing)              
-        string = re.sub('(-)', ' dash ', string) #don't do it this way ever
-        string = re.sub('([A-Z][A-Z]+)', '<spell>' + r'\1' + '</spell>', string) #ugh
+        
+        if isLiteral:
+            string = re.sub('(\d+)', '<spell>' + r'\1' + '</spell>', stringing)              
+            string = re.sub('(-)', ' dash ', string)                                    #don't do it this way ever
+            string = re.sub('([A-Z][A-Z]+)', '<spell>' + r'\1' + '</spell>', string)    #ugh
+            self.speaker.Speak(string, self.SVSFIsXML)
 
-        self.speaker.Speak(string, self.SVSFIsXML)
+        else:
+            self.speaker.Speak(stringing)
+        
         return
 
     def watchFile(self):
@@ -55,9 +62,6 @@ class Countmoney(object):
 
         try:
             while True:
-                #time.sleep(2)
-                #lines    = fh.readlines()
-
                 line = fh.readline()
                 if not line:
                     time.sleep(1)
@@ -101,7 +105,7 @@ class Countmoney(object):
         return
 
     def Jump(self, string):
-        self.say('Arrived at ' + string['StarSystem'])
+        self.say('Arrived at ' + string['StarSystem'], True)
 
     def bounties(self, string):
         self.bounty     += string['Rewards'][0]['Reward']
@@ -109,9 +113,9 @@ class Countmoney(object):
             #mixer.music.play()
             pass
 
-        if self.bounty % 1000000 >= 1:
-            self.say('You have accumulated one million in bounties.')
-            self.bounty = self.bounty - 1000000
+        if self.bountyCount * self.speakEvery <= self.bounty:
+            self.say('You have accumulated ' + str(self.bountyCount * self.speakEvery) + ' in bounties.', False)
+            self.bountyCount += 1
 
         return
 
@@ -122,9 +126,9 @@ class Countmoney(object):
             #mixer.music.play()
             pass
 
-        if self.czbounty - 1000000 >= 0:
-            self.say('You have accumulated one million in combat bonds.')
-            self.czbounty = self.czbounty - 1000000
+        if self.czCount * self.speakEvery <= self.czbounty:
+            self.say('You have accumulated over ' + str(self.czCount * self.speakEvery) + ' in combat bonds.', False)
+            self.czCount += 1
 
         return
 
