@@ -8,28 +8,102 @@ import datetime
 import pytz
 import iso8601
 import getfolder
-from threading import Thread
 from pygame import mixer
 import re
+import tkinter as tk
+import threading
+import zlib
+import base64
 
 
-class Countmoney(object):
 
-    def __init__(self, _path):
-        self.speaker        = win32com.client.Dispatch("SAPI.SpVoice")
-        self.path           = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
-        self.lastEvent      = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
-        self.bounty         = 0
-        self.bountyCount    = 1       
-        self.czbounty       = 0
-        self.czCount        = 1
-        self.speakEvery     = 1000000 #Speak about money every this many credits
-        self.SVSFIsXML      = 8 #This flag is the SpeechVoiceSpeakFlag that controls whether the text is read as is or is interpreted as XML. 
-                                #https://msdn.microsoft.com/en-us/library/ms720892(v=vs.85).aspx further reading
+
+class JournalTTS(tk.Frame):
+
+    def __init__(self, _path, master = None):
+        super().__init__(master)
+        self.speaker            = win32com.client.Dispatch("SAPI.SpVoice")
+        self.path               = getfolder.get_path(getfolder.FOLDERID.SavedGames, getfolder.UserHandle.current) + "\\Frontier Developments\\Elite Dangerous" if not _path else _path
+        self.lastEvent          = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
+        self.bounty             = 0
+        self.bountyCount        = 1       
+        self.czbounty           = 0
+        self.czCount            = 1
+        self.speakEvery         = 1000000 #Speak about money every this many credits
+        self.SVSFIsXML          = 8 #This flag is the SpeechVoiceSpeakFlag that controls whether the text is read as is or is interpreted as XML. 
+                                    #https://msdn.microsoft.com/en-us/library/ms720892(v=vs.85).aspx further reading
+        self.thread             = None
+        self.threadShouldStop   = False
         mixer.init()
         mixer.music.load('cena.mp3')
 
+        self.master.title("Silly ED TTS Thing")
+        self.createWidgets()
+        self.master.protocol('WM_DELETE_WINDOW', self.onQuitButtonPressed)
+        self.master.minsize(width=250, height=100)
+        self.master.resizable(width=False, height=False)
         pass
+
+    def reset(self):
+        self.lastEvent          = (datetime.datetime.utcnow() - datetime.timedelta(1)).replace(tzinfo=pytz.utc)
+        self.bounty             = 0
+        self.bountyCount        = 1       
+        self.czbounty           = 0
+        self.czCount            = 1
+
+    def createWidgets(self):
+        self.bountyCheckboxVar  = tk.BooleanVar()
+        self.czCheckboxVar      = tk.BooleanVar()
+        self.jumpCheckboxVar    = tk.BooleanVar()
+
+        self.bountyCheckbox     = tk.Checkbutton(self.master, text="Read out bounties", variable=self.bountyCheckboxVar, command=self.bountyCheckboxStateChanged)
+        self.czCheckbox         = tk.Checkbutton(self.master, text="Read out combat bonds", variable=self.czCheckboxVar, command=self.czCheckboxStateChanged)
+        self.jumpCheckbox       = tk.Checkbutton(self.master, text="Read out jumps", variable=self.jumpCheckboxVar, command=self.jumpCheckboxStateChanged)
+        self.startButton        = tk.Button(self.master, text="Start", command=self.startWatching)
+
+        self.bountyCheckbox.pack()
+        self.czCheckbox.pack()
+        self.jumpCheckbox.pack()
+        self.startButton.pack()
+        
+        pass
+
+    def startWatching(self):
+        #dirty reads, dirty reads everywhere!
+
+        self.startButton['text'] = 'Restart'
+        if not self.thread:
+            self.thread             = threading.Thread(target=self.watchFile)
+            self.thread.daemon      = True
+            self.thread.start()
+        else:
+            self.reset()
+            self.threadShouldStop   = True
+            self.thread.join()
+            self.threadShouldStop   = False
+            self.thread             = threading.Thread(target=self.watchFile)
+            self.thread.daemon      = True
+            self.thread.start()
+
+
+    def bountyCheckboxStateChanged(self):
+        #print(self.bountyCheckboxVar.get())
+        pass
+
+    def czCheckboxStateChanged(self):
+        #print(self.czCheckboxVar.get())
+        pass
+
+    def jumpCheckboxStateChanged(self):
+        #print(self.jumpCheckboxVar.get())
+        pass
+
+    def onQuitButtonPressed(self):
+        if self.thread:
+            self.threadShouldStop   = True
+            self.thread.join()
+        
+        self.master.destroy()
 
     def say(self, stringing, isLiteral=False):
         string          = ""
@@ -52,16 +126,20 @@ class Countmoney(object):
             fp         = max(glob.iglob(self.path + "\\*.log"), key=os.path.getctime)
             fh         = open(fp, mode='r')
         except FileNotFoundError:
-            print ("Path not found.")
+            #print ("Path not found.")
             return
         except ValueError:
-            print("No log files found.")
+            #print("No log files found.")
             return
         
-        print("Opened file: " + fp)
+        #print("Opened file: " + fp)
 
         try:
             while True:
+                if(self.threadShouldStop):
+                    fh.close()
+                    return
+
                 line = fh.readline()
                 if not line:
                     time.sleep(1)
@@ -88,15 +166,15 @@ class Countmoney(object):
     def parseEvents(self, string):
         try:
             #Normal Bounties
-            if(string['event'] == 'Bounty'):
+            if(string['event'] == 'Bounty' and self.bountyCheckboxVar.get()):
                 self.bounties(string)
 
             #CZ Combat bonds
-            elif(string['event'] == 'FactionKillBond'):
+            elif(string['event'] == 'FactionKillBond' and self.czCheckboxVar.get()):
                 self.combatBonds(string)
 
             #Jumping
-            elif(string['event'] == 'FSDJump'):
+            elif(string['event'] == 'FSDJump' and self.jumpCheckboxVar.get()):
                 self.Jump(string)
         
         except KeyError:
@@ -134,12 +212,15 @@ class Countmoney(object):
 
 
 def main(argv):
+    rootWindow      = tk.Tk()
     try:
-        thing = Countmoney(argv[1])
+        thing = JournalTTS(argv[1], master=rootWindow)
     except IndexError:
-        thing = Countmoney(None)
+        thing = JournalTTS(None, master=rootWindow)
     
-    thing.watchFile()
+    #thing.watchFile()
+
+    thing.mainloop()
     return 0
 
 if __name__ == '__main__':
