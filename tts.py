@@ -11,6 +11,7 @@ import getfolder
 from pygame import mixer
 import re
 import tkinter as tk
+import tkinter.messagebox
 import threading
 import zlib
 import base64
@@ -130,13 +131,12 @@ class JournalTTS(tk.Frame):
             fp         = max(glob.iglob(self.path + "\\*.log"), key=os.path.getctime)
             fh         = open(fp, mode='r')
         except FileNotFoundError:
-            #print ("Path not found.")
+            tk.messagebox.showwarning("Open File", "Path not found: " + self.path)
             return
         except ValueError:
-            #print("No log files found.")
+            tk.messagebox.showwarning("Open File", "No log files found at: " + self.path)
             return
         
-        #print("Opened file: " + fp)
 
         try:
             while True:
@@ -157,10 +157,9 @@ class JournalTTS(tk.Frame):
                     self.parseEvents(parsedJSON)
         
         except KeyboardInterrupt:
-            print("Quitting")
             return
         except json.decoder.JSONDecodeError:
-            print("Invalid JSON. Maybe it's not a valid Elite:Dangerous Journal file?'")
+            tk.messagebox.showwarning("Invalid JSON", "Invalid JSON. Maybe it's not a valid Elite:Dangerous Journal file?")
             return
         
         return
